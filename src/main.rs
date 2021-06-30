@@ -28,7 +28,7 @@ fn main() -> Result<(), Error> {
     con.run_command(format!("mark {}; move scratchpad", mark))?;
 
     // Run command
-    let output = child_process.status();
+    let status = child_process.status();
 
     // Move the hidden window back (and disable floating because idk)
     con.run_command(format!(
@@ -36,12 +36,17 @@ fn main() -> Result<(), Error> {
         pid, mark
     ))?;
 
-    match output {
+    // Print child command status
+    match status {
         Ok(output) => match output.code() {
-            Some(code) => println!("{} exited with code: {}", child_process_name, code),
+            Some(code) => {
+                if code > 0 {
+                    println!("{} exited with code: {}", child_process_name, code)
+                }
+            }
             None => println!("{} was terminated by signal", child_process_name),
         },
-        Err(_) => println!("Failed to start {}", child_process_name),
+        Err(e) => println!("Failed to start {}: {}", child_process_name, e),
     }
 
     Ok(())
