@@ -12,3 +12,4 @@ categories = [ "command-line-utilities" ]
 
 [dependencies]
 swayipc = "2.7"
+exitcode = "1.1"

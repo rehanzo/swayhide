@@ -41,7 +41,6 @@ $ cargo install --path .
 
 ## TODO
 
-- Usage menu (triggered by `--help` or no command)
 - Shell completions (how to bundle completion files?)
 
 Contributions are very welcome :)
