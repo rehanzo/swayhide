@@ -31,6 +31,12 @@ $ hide "imv image.jpg"
 $ cargo install swayhide
 ```
 
+There's also an AUR package for ArchLinux users:
+
+```sh
+paru -S swayhide
+```
+
 ## Building from source
 
 ```sh
