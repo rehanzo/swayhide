@@ -1,9 +1,7 @@
 use std::env::args;
 use std::process::Command;
 use std::process::exit;
-use std::thread::sleep;
-use std::time::Duration;
-use swayipc::{Connection, Error};
+use swayipc::{Connection, Error, EventType};
 
 const USAGE: &str = r#"
 A window swallower for sway
@@ -69,9 +67,10 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
     // Run command
     let mut child = child_process.spawn().map_err(|err| Error::from_boxed_compat(Box::new(err)))?;
 
-    // FIXME: Here we need to wait for the new window to have appeared.
-    // This waits 1000s, but that's a real hack. I've no idea how to wait properly.
-    sleep(Duration::from_millis(1000));
+    for _ in Connection::new()?.subscribe(&[EventType::Window])? {
+        // FIXME: It's still possible for this window to be entirely unrelated.
+        break;
+    }
 
     // Focus our marked window and hide it.
     con.run_command(format!("[con_mark=\"{}\"] focus; move scratchpad", mark))?;
