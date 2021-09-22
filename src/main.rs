@@ -1,7 +1,8 @@
 use std::env::args;
-use std::process::Command;
 use std::process::exit;
+use std::process::Command;
 use swayipc::{Connection, Error, EventType};
+use swayipc::reply::Event;
 
 const USAGE: &str = r#"
 A window swallower for sway
@@ -67,9 +68,18 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
     // Run command
     let mut child = child_process.spawn().map_err(|err| Error::from_boxed_compat(Box::new(err)))?;
 
-    for _ in Connection::new()?.subscribe(&[EventType::Window])? {
-        // FIXME: It's still possible for this window to be entirely unrelated.
-        break;
+    // Wait for new events
+    for event in Connection::new()?.subscribe(&[EventType::Window])? {
+        match event? {
+            // Check if it's a window event
+            Event::Window(window_event) => {
+                // Check if the window belongs to our child
+                if window_event.container.pid.unwrap() == (child.id() as i32) {
+                    break;
+                }
+            }
+            _ => continue
+        }
     }
 
     // Focus our marked window and hide it.
