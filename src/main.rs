@@ -1,6 +1,8 @@
 use std::env::args;
 use std::process::Command;
 use std::process::exit;
+use std::thread::sleep;
+use std::time::Duration;
 use swayipc::{Connection, Error};
 
 const USAGE: &str = r#"
@@ -61,12 +63,18 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
         .unwrap();
 
     let mark = format!("hidden-{}", pid);
+    con.run_command(format!("mark {}", mark))?;
+    con.run_command("split v")?;
 
     // Run command
     let mut child = child_process.spawn().map_err(|err| Error::from_boxed_compat(Box::new(err)))?;
 
-    // Mark window and move to scratchpad
-    con.run_command(format!("mark {}; move scratchpad", mark))?;
+    // FIXME: Here we need to wait for the new window to have appeared.
+    // This waits 1000s, but that's a real hack. I've no idea how to wait properly.
+    sleep(Duration::from_millis(1000));
+
+    // Focus our marked window and hide it.
+    con.run_command(format!("[con_mark=\"{}\"] focus; move scratchpad", mark))?;
 
     // Wait for command to exit
     let status = child.wait().map_err(|err| Error::from_boxed_compat(Box::new(err)))?.code();
