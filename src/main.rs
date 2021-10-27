@@ -1,7 +1,8 @@
 use std::env::args;
-use std::process::Command;
 use std::process::exit;
-use swayipc::{Connection, Error};
+use std::process::Command;
+use swayipc::{Connection, Error, EventType};
+use swayipc::reply::Event;
 
 const USAGE: &str = r#"
 A window swallower for sway
@@ -61,12 +62,28 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
         .unwrap();
 
     let mark = format!("hidden-{}", pid);
+    con.run_command(format!("mark {}", mark))?;
+    con.run_command("split v")?;
 
     // Run command
     let mut child = child_process.spawn().map_err(|err| Error::from_boxed_compat(Box::new(err)))?;
 
-    // Mark window and move to scratchpad
-    con.run_command(format!("mark {}; move scratchpad", mark))?;
+    // Wait for new events
+    for event in Connection::new()?.subscribe(&[EventType::Window])? {
+        match event? {
+            // Check if it's a window event
+            Event::Window(window_event) => {
+                // Check if the window belongs to our child
+                if window_event.container.pid.unwrap() == (child.id() as i32) {
+                    break;
+                }
+            }
+            _ => continue
+        }
+    }
+
+    // Focus our marked window and hide it.
+    con.run_command(format!("[con_mark=\"{}\"] focus; move scratchpad", mark))?;
 
     // Wait for command to exit
     let status = child.wait().map_err(|err| Error::from_boxed_compat(Box::new(err)))?.code();
