@@ -17,11 +17,19 @@
       config = system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        swayhide = pkgs.rustPlatform.buildRustPackage {
-          name = "swayhide";
-          version = "0.2.0";
+        swayhide = pkgs.rustPlatform.buildRustPackage rec {
+          pname = "swayhide";
+          version = "0.2.1";
           src = ./.;
-          cargoSha256 = "sha256-jL+o/WkKIyJufyTVJDtyB/pCGqrk2dZ01QzBEbglzrY=";
+          cargoSha256 = "sha256-zsWixMdh5QHzjG8OdYVXQqjjuBDhTeqX7iAFeOyEOCk=";
+          nativeBuildInputs = with pkgs; [ installShellFiles ];
+
+          postInstall = ''
+            installShellCompletion \
+              --name ${pname} completions/swayhide.bash \
+              --name ${pname}.fish completions/swayhide.fish \
+              --name _${pname} completions/swayhide.zsh
+          '';
         };
       in {
         defaultPackage.${system} = swayhide;
