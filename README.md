@@ -50,3 +50,7 @@ $ cargo install --path .
 - Shell completions (how to bundle completion files?)
 
 Contributions are very welcome :)
+
+## License
+
+This project is licensed under GPL 3.0
