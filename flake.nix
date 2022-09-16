@@ -34,6 +34,10 @@
       in {
         packages.${system}.default = swayhide;
 
+        overlays.default = final: prev: {
+          inherit swayhide;
+        };
+
         devShells.${system}.default = pkgs.mkShell {
           buildInputs = with pkgs; [ rustc cargo rustfmt ];
         };
