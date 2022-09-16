@@ -32,9 +32,9 @@
           '';
         };
       in {
-        defaultPackage.${system} = swayhide;
+        packages.${system}.default = swayhide;
 
-        devShell.${system} = pkgs.mkShell {
+        devShells.${system}.default = pkgs.mkShell {
           buildInputs = with pkgs; [ rustc cargo rustfmt ];
         };
       };
