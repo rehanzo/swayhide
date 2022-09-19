@@ -32,9 +32,13 @@
           '';
         };
       in {
-        defaultPackage.${system} = swayhide;
+        packages.${system}.default = swayhide;
 
-        devShell.${system} = pkgs.mkShell {
+        overlays.default = final: prev: {
+          inherit swayhide;
+        };
+
+        devShells.${system}.default = pkgs.mkShell {
           buildInputs = with pkgs; [ rustc cargo rustfmt ];
         };
       };
