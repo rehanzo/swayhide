@@ -1,5 +1,7 @@
 # swayhide - A window swallower for sway
 
+**NOTE:** As I'm not using sway anymore, I won't be continuing development of swayhide. If you want to continue developing this, please open an issue about it, and I can transfer the repo to your account.
+
 ## Description
 
 `swayhide` hides the currently active terminal (by moving it to the scratchpad),
