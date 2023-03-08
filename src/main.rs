@@ -1,8 +1,8 @@
 use std::env::args;
 use std::process::exit;
 use std::process::Command;
-use swayipc::{Connection, Error, EventType};
 use swayipc::reply::Event;
+use swayipc::{Connection, Error, EventType};
 
 const USAGE: &str = r#"
 A window swallower for sway
@@ -61,12 +61,12 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
         .pid
         .unwrap();
 
-    let mark = format!("hidden-{}", pid);
-    con.run_command(format!("mark {}", mark))?;
     con.run_command("split v")?;
 
     // Run command
-    let mut child = child_process.spawn().map_err(|err| Error::from_boxed_compat(Box::new(err)))?;
+    let mut child = child_process
+        .spawn()
+        .map_err(|err| Error::from_boxed_compat(Box::new(err)))?;
 
     // Wait for new events
     for event in Connection::new()?.subscribe(&[EventType::Window])? {
@@ -78,27 +78,30 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
                     break;
                 }
             }
-            _ => continue
+            _ => continue,
         }
     }
 
     // Focus our marked window and hide it.
-    con.run_command(format!("[con_mark=\"{}\"] focus; move scratchpad", mark))?;
+    con.run_command(format!("[pid={}] focus; move scratchpad", pid))?;
 
     // Wait for command to exit
-    let status = child.wait().map_err(|err| Error::from_boxed_compat(Box::new(err)))?.code();
+    let status = child
+        .wait()
+        .map_err(|err| Error::from_boxed_compat(Box::new(err)))?
+        .code();
 
     // Move the hidden window back (and disable floating because idk)
-    con.run_command(format!(
-        "[pid={}] focus; move mark {}; floating disable",
-        pid, mark
-    ))?;
+    con.run_command(format!("[pid={}] focus; floating disable", pid))?;
 
     // Print child command status
     match status {
         Some(code) => {
             if code > 0 {
-                eprintln!("swayhide: {} exited with code: {}", child_process_name, code);
+                eprintln!(
+                    "swayhide: {} exited with code: {}",
+                    child_process_name, code
+                );
             }
         }
         None => eprintln!("swayhide: {} was terminated by signal", child_process_name),
@@ -114,7 +117,7 @@ fn main() {
         None => show_help(),
         Some("-h") => show_help(),
         Some("--help") => show_help(),
-        Some(_) => hide(args)
+        Some(_) => hide(args),
     };
     let exit_code = match result {
         Ok(_) => exitcode::OK,
