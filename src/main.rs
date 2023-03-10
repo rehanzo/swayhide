@@ -45,10 +45,10 @@ fn parse_child_cmd(child_cmd: Vec<String>) -> Command {
     return cmd;
 }
 
-fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
+fn hide(args: Vec<String>, tabbed: bool) -> Result<(), swayipc::Error> {
     // Prepare command
-    let child_process_name = args.get(1).unwrap(); // This can be replaced with child_process.get_program() when https://github.com/rust-lang/rust/issues/44434 is merged into stable
-    let mut child_process = parse_child_cmd(args.get(1..).expect("No process to start").into());
+    let child_process_name = args.get(0).unwrap(); // This can be replaced with child_process.get_program() when https://github.com/rust-lang/rust/issues/44434 is merged into stable
+    let mut child_process = parse_child_cmd(args.get(0..).expect("No process to start").into());
 
     // Set up connection
     let mut con = Connection::new()?;
@@ -63,27 +63,34 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
 
     con.run_command("split v")?;
 
+    if tabbed {
+        // set layout to tabbed in preperation for opening program
+        con.run_command("layout tabbed")?;
+    }
+
     // Run command
     let mut child = child_process
         .spawn()
         .map_err(|err| Error::from_boxed_compat(Box::new(err)))?;
 
-    // Wait for new events
-    for event in Connection::new()?.subscribe(&[EventType::Window])? {
-        match event? {
-            // Check if it's a window event
-            Event::Window(window_event) => {
-                // Check if the window belongs to our child
-                if window_event.container.pid.unwrap() == (child.id() as i32) {
-                    break;
+    if !tabbed {
+        // Wait for new events
+        for event in Connection::new()?.subscribe(&[EventType::Window])? {
+            match event? {
+                // Check if it's a window event
+                Event::Window(window_event) => {
+                    // Check if the window belongs to our child
+                    if window_event.container.pid.unwrap() == (child.id() as i32) {
+                        break;
+                    }
                 }
+                _ => continue,
             }
-            _ => continue,
         }
-    }
 
-    // Focus our marked window and hide it.
-    con.run_command(format!("[pid={}] focus; move scratchpad", pid))?;
+        // Focus our marked window and hide it.
+        con.run_command(format!("[pid={}] focus; move scratchpad", pid))?;
+    }
 
     // Wait for command to exit
     let status = child
@@ -91,8 +98,13 @@ fn hide(args: Vec<String>) -> Result<(), swayipc::Error> {
         .map_err(|err| Error::from_boxed_compat(Box::new(err)))?
         .code();
 
-    // Move the hidden window back (and disable floating because idk)
-    con.run_command(format!("[pid={}] focus; floating disable", pid))?;
+    if !tabbed {
+        // Move the hidden window back (and disable floating because idk)
+        con.run_command(format!("[pid={}] focus; floating disable", pid))?;
+    } else if tabbed {
+        // turn tabbed off
+        con.run_command(format!("[pid={}] focus; layout toggle tabbed split", pid))?;
+    }
 
     // Print child command status
     match status {
@@ -117,7 +129,8 @@ fn main() {
         None => show_help(),
         Some("-h") => show_help(),
         Some("--help") => show_help(),
-        Some(_) => hide(args),
+        Some("-t") => hide(args.get(2..).unwrap().to_owned(), true),
+        Some(_) => hide(args.get(1..).unwrap().to_owned(), false),
     };
     let exit_code = match result {
         Ok(_) => exitcode::OK,
