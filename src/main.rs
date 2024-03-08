@@ -91,6 +91,7 @@ fn hide(args: Vec<String>, tabbed: bool) -> Result<(), swayipc::Error> {
         // Focus our marked window and hide it.
         con.run_command(format!("[pid={}] focus; move scratchpad", pid))?;
     }
+    con.run_command("split none")?;
 
     // Wait for command to exit
     let status = child
