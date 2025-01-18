@@ -103,7 +103,10 @@ fn hide(args: Vec<String>, tabbed: bool) -> Result<(), swayipc::Error> {
         con.run_command(format!("[pid={}] focus; floating disable", pid))?;
     } else if tabbed {
         // turn tabbed off
-        con.run_command(format!("[pid={}] focus; layout toggle tabbed split", pid))?;
+        con.run_command(format!(
+            "[pid={}] focus; focus parent; layout toggle tabbed split",
+            pid
+        ))?;
     }
 
     // Print child command status
